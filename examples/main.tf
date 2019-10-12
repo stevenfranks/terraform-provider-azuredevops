@@ -19,13 +19,13 @@ resource "azuredevops_build_definition" "build_definition" {
   project_id      = azuredevops_project.project.id
   name            = "Test Pipeline"
   agent_pool_name = "Hosted Ubuntu 1604"
+  service_connection_id = azuredevops_serviceendpoint.github_serviceendpoint.id
 
   repository {
     repo_type             = "GitHub"
     repo_name             = "nmiodice/terraform-azure-devops-hack"
     branch_name           = "master"
     yml_path              = "azdo-api-samples/azure-pipeline.yml"
-    service_connection_id = azuredevops_serviceendpoint.github_serviceendpoint.id
   }
 }
 
