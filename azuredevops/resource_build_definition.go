@@ -38,6 +38,11 @@ func resourceBuildDefinition() *schema.Resource {
 				Optional: true,
 				Default:  "Hosted Ubuntu 1604",
 			},
+			"service_connection_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},			
 			"repository": {
 				Type:     schema.TypeSet,
 				Required: true,
@@ -62,11 +67,6 @@ func resourceBuildDefinition() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "master",
-						},
-						"service_connection_id": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Default:  "",
 						},
 					},
 				},
@@ -203,13 +203,13 @@ func flattenRepository(buildDefiniton *build.BuildDefinition) interface{} {
 		"repo_name":             *buildDefiniton.Repository.Name,
 		"repo_type":             *buildDefiniton.Repository.Type,
 		"branch_name":           *buildDefiniton.Repository.DefaultBranch,
-		"service_connection_id": (*buildDefiniton.Repository.Properties)["connectedServiceId"],
 	}}
 }
 
 func expandBuildDefinition(d *schema.ResourceData) (*build.BuildDefinition, string, error) {
 	projectID := d.Get("project_id").(string)
 	repositories := d.Get("repository").(*schema.Set).List()
+	connectedServiceId := d.Get("service_connection_id").(string)
 
 	// Note: If configured, this will be of length 1 based on the schema definition above.
 	if len(repositories) != 1 {
@@ -240,15 +240,15 @@ func expandBuildDefinition(d *schema.ResourceData) (*build.BuildDefinition, stri
 		Id:       buildDefinitionReference,
 		Name:     converter.String(d.Get("name").(string)),
 		Revision: converter.Int(d.Get("revision").(int)),
+		Properties: &map[string]string{
+			"connectedServiceId": &connectedServiceId,
+		},		
 		Repository: &build.BuildRepository{
 			Url:           &repoURL,
 			Id:            &repoName,
 			Name:          &repoName,
 			DefaultBranch: converter.String(repository["branch_name"].(string)),
 			Type:          &repoType,
-			Properties: &map[string]string{
-				"connectedServiceId": repository["service_connection_id"].(string),
-			},
 		},
 		Process: &build.YamlProcess{
 			YamlFilename: converter.String(repository["yml_path"].(string)),
